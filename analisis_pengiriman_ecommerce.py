@@ -18,6 +18,7 @@ DAFTAR_MENU = [(1, "Lihat Dataset", "Menampilkan data pengirima per halaman"),
                (0, "Keluar", "Menutup program")]
 
 BARIS_PER_HALAMAN = 20
+MAKS_HALAMAN = 20
 
 BOBOT_CUACA = 0.75
 BOBOT_METODE = 0.25
@@ -249,33 +250,29 @@ class Dataset:
 
 def menu_dataset(data):
     judul("MENU 1 : LIHAT DATASET")
+    data = data[:BARIS_PER_HALAMAN * MAKS_HALAMAN]
     total_halaman = (len(data) + BARIS_PER_HALAMAN - 1) // BARIS_PER_HALAMAN
-    print(f"Di sini Anda bisa melihat seluruh data pengiriman, {BARIS_PER_HALAMAN} baris untuk setiap halaman.")
+    print(f"Di sini Anda bisa melihat data pengiriman, {BARIS_PER_HALAMAN} baris per halaman "
+          f"(maksimal {MAKS_HALAMAN} halaman).")
     print("Hanya baris data yang valid yang akan ditampilkan.")
 
     halaman = 1
-    while True:
+    while halaman:
         awal = (halaman - 1) * BARIS_PER_HALAMAN
-        akhir = min(awal + BARIS_PER_HALAMAN, len(data))
-        baris_tabel = []
-        for nomor, baris in enumerate(data[awal:akhir], awal + 1):
-            baris_tabel.append((nomor, baris["order_id"], baris["order_date"],
-                                baris["hari_telat"], f"{baris['shipping_cost_usd']:.2f}",
-                                f"{baris['customer_rating']:g}", baris["weather_condition"],
-                                baris["shipping_method"], baris["carrier"],
-                                baris["delivery_status"]))
+        potongan = data[awal:awal + BARIS_PER_HALAMAN]
         tabel(["No", "ID Order", "Tanggal", "Telat (hr)", "Ongkir ($)", "Rating",
                "Cuaca", "Metode Kirim", "Kurir", "Status"],
-              baris_tabel, "><<>>><<<<",
+              [(n, b["order_id"], b["order_date"], b["hari_telat"],
+                f"{b['shipping_cost_usd']:.2f}", f"{b['customer_rating']:g}",
+                b["weather_condition"], b["shipping_method"], b["carrier"],
+                b["delivery_status"]) for n, b in enumerate(potongan, awal + 1)],
+              "><<>>><<<<",
               caption=f"HALAMAN {halaman} DARI {total_halaman} "
-                      f"(menampilkan baris {awal + 1} sampai {akhir} dari {len(data)} baris)")
-
+                      f"(menampilkan baris {awal + 1} sampai {awal + len(potongan)} dari {len(data)} baris)")
         halaman = minta(
             "bulat", minimum=0, maksimum=total_halaman,
             pesan=f"\nHalaman berapa yang ingin Anda buka? (1-{total_halaman}), "
                   f"atau ketik 0 untuk kembali ke menu utama: ")
-        if halaman == 0:
-            return
 
 
 def menu_risiko(data):
@@ -347,11 +344,11 @@ def menu_risiko(data):
 
     baris_tabel = []
     for urutan, (indeks, c, m, jumlah, persen_telat, rata_telat, _, _) in enumerate(urutan_risiko[:jumlah_tampil], 1):
-        baris_tabel.append((urutan, c, m, jumlah, f"{persen_telat:.1f}%",
-                            f"{rata_telat:.1f}", f"{indeks:.1f}%", tingkat_risiko(indeks)))
-    tabel(["No", "Cuaca", "Metode Kirim", "Jumlah", "% Telat",
-           "Telat (hr)", "Skor AHP", "Tingkat"],
-          baris_tabel, "^<<>>>><",
+        baris_tabel.append((c, m, jumlah, f"{persen_telat:.1f}%",
+                            f"{rata_telat:.1f}", f"{indeks:.1f}%", tingkat_risiko(indeks), urutan))
+    tabel(["Cuaca", "Metode Kirim", "Jumlah", "% Telat",
+           "Telat (hr)", "Skor AHP", "Tingkat", "Ranking"],
+          baris_tabel, "<<>>>><^",
           caption=f"{len(baris_tabel)} KOMBINASI CUACA & METODE DENGAN RISIKO TERTINGGI")
 
 
@@ -398,10 +395,10 @@ def menu_saran(terkirim):
 
     baris_tabel = []
     for urutan, (skor, nama, hari, rating, ongkir) in enumerate(hasil[:jumlah_tampil], 1):
-        baris_tabel.append((urutan, nama, f"{skor:.2f}", f"{hari:.2f}",
-                            f"{rating:.2f}", f"{ongkir:.2f}"))
-    tabel(["Rank", "Kurir", "Skor AHP", "Telat (hr)", "Rating", "Ongkir ($)"],
-          baris_tabel, "^<>>>>",
+        baris_tabel.append((nama, f"{hari:.2f}", f"{ongkir:.2f}",
+                            f"{rating:.2f}", f"{skor:.2f}", urutan))
+    tabel(["Kurir", "Telat (hr)", "Ongkir ($)", "Rating", "Skor AHP", "Ranking"],
+          baris_tabel, "<>>>>^",
           caption=f"{len(baris_tabel)} KURIR TERBAIK - Metode {metode_pilihan} "
                   f"(telat maks. {batas:g} hari, rating min. {minimal:g})")
     print(f"\nAda {len(hasil)} kurir yang memenuhi syarat Anda.")
@@ -435,10 +432,10 @@ def menu_kinerja(terkirim):
 
     semua.sort(key=lambda k: k.skor, reverse=True)
     peringkat = {k.nama: 1 + sum(lain.skor > k.skor for lain in semua) for k in semua}
-    baris_tabel = [(peringkat[k.nama], k.nama, k.total, f"{k.skor:.1f}",
+    baris_tabel = [(k.nama, k.total, f"{k.skor:.1f}", peringkat[k.nama],
                     "<-- pilihan Anda" if k is pilih else "") for k in semua[:jumlah_tampil]]
-    tabel(["Rank", "Kurir", "Terkirim", "Skor AHP", ""],
-          baris_tabel, "^<>><",
+    tabel(["Kurir", "Terkirim", "Skor AHP", "Ranking", ""],
+          baris_tabel, "<>>^<",
           caption=f"{len(baris_tabel)} KURIR TERATAS BERDASARKAN SKOR")
     print(f"\nHasilnya, {kurir_pilihan} memiliki skor AHP {pilih.skor:.1f}/100 "
           f"dan berada di peringkat {peringkat[kurir_pilihan]} dari {len(DAFTAR_KURIR)} kurir.")
