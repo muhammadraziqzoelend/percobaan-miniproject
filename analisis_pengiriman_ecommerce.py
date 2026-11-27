@@ -249,7 +249,7 @@ class Dataset:
 
 def menu_dataset(data):
     judul("MENU 1 : LIHAT DATASET")
-    total_halaman = len(data) // BARIS_PER_HALAMAN
+    total_halaman = (len(data) + BARIS_PER_HALAMAN - 1) // BARIS_PER_HALAMAN
     print(f"Di sini Anda bisa melihat seluruh data pengiriman, {BARIS_PER_HALAMAN} baris untuk setiap halaman.")
     print("Hanya baris data yang valid yang akan ditampilkan.")
 
@@ -315,7 +315,7 @@ def menu_risiko(data):
     for (c, m), (jumlah, jml_telat, total_hari) in kombinasi.items():
         p_cuaca = 100 * telat_cuaca[c] / total_cuaca[c]
         p_metode = 100 * telat_metode[m] / total_metode[m]
-        indeks = BOBOT_CUACA * p_cuaca + BOBOT_METODE * p_cuaca
+        indeks = BOBOT_CUACA * p_cuaca + BOBOT_METODE * p_metode
         rata_telat = total_hari / jml_telat if jml_telat else 0
         urutan_risiko.append((indeks, c, m, jumlah, 100 * jml_telat / jumlah,
                               rata_telat, p_cuaca, p_metode))
@@ -434,7 +434,7 @@ def menu_kinerja(terkirim):
           "<>>", caption=f"KINERJA KURIR : {kurir_pilihan}")
 
     semua.sort(key=lambda k: k.skor, reverse=True)
-    peringkat = {k.nama: 1 + sum(lain.skor >= k.skor for lain in semua) for k in semua}
+    peringkat = {k.nama: 1 + sum(lain.skor > k.skor for lain in semua) for k in semua}
     baris_tabel = [(peringkat[k.nama], k.nama, k.total, f"{k.skor:.1f}",
                     "<-- pilihan Anda" if k is pilih else "") for k in semua[:jumlah_tampil]]
     tabel(["Rank", "Kurir", "Terkirim", "Skor AHP", ""],
