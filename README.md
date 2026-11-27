@@ -22,7 +22,6 @@ Program berbasis terminal ini membaca data pengiriman e-commerce dari file CSV (
 
 * `analisis_pengiriman_ecommerce.py` — Kode utama program Python.
 * `E-commerce_Delivery_Shipping_Data_2026.csv` — Dataset pengiriman e-commerce (50.000 baris, delimiter `,`). Sumber: [Kaggle](https://www.kaggle.com/datasets/datascikhan/e-commerce-delivery-and-shipping-data-2026).
-* `Laporan_Mini_Project_3C.docx` — Laporan mini project.
 * `README.md` — Dokumentasi panduan penggunaan program.
 
 ## Cara Menjalankan Program
